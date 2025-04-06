@@ -1,0 +1,9 @@
+# VsCode
+.vscode/*
+!.vscode/extensions.json
+*.code-workspace
+
+
+# Afinity Designer
+*.afdesign~lock~
+*.afphoto~lock~
