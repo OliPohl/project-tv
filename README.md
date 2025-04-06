@@ -33,7 +33,7 @@ This means:
 - ✅ You are free to share and adapt the work.
 - ❌ You may **not** use this project for commercial purposes.
 
-For full details, see the [LICENSE](./LICENSE) file.
+For more details, please refer to the [LICENSE](./LICENSE).
 
 ---
 
