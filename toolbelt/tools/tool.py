@@ -5,9 +5,9 @@ class Tool:
   def __init__(self, master):
     self.mainframe = ctk.CTkFrame(master)
     self.__class_init__()
-    self.__create_ui__()
+    self.__create_ui__(self.mainframe)
 
-  def __create_ui__(self):
+  def __create_ui__(self, mainframe):
     pass
 
   def __class_init__(self):

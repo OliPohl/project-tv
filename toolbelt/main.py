@@ -2,6 +2,7 @@ import customtkinter as ctk
 from screeninfo import get_monitors
 from tools.tool import Tool
 from tools.heatmap_generator import HeatmapGenerator
+from tools.utils.ctk_utils import get_ctk_scale
 # Import new tools here
 
 class App(ctk.CTk):
@@ -19,8 +20,8 @@ class App(ctk.CTk):
         POS_RIGHT = (monitor.width / 2 - WINDOW_WIDTH / 2).__round__()
         POS_DOWN = (monitor.height / 2 - WINDOW_HEIGHT / 2).__round__()
         self.root.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}+{POS_RIGHT}+{POS_DOWN}')
-        self.scale = WINDOW_WIDTH / 1707
         break
+    self.scale = get_ctk_scale()
 
     self.create_sidebar()
     self.root.mainloop()
