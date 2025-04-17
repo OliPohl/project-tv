@@ -1,10 +1,33 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client'
-import './renderer/shared/styles/index.css'
-import App from './components/app/App.tsx'
+/**
+ * Application Entry Point
+ * 
+ * Initializes React root and renders the main application component.
+ * @file This is the main entry file for the React application.
+ */
 
-createRoot(document.getElementById('root')!).render(
+// #region Imports
+// Modules
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+
+// Styles
+import './shared/styles/general.css';
+import './shared/styles/fonts.css';
+
+// Components
+import VideoPlayer from './components/videoplayer';
+// #endregion Importss
+
+
+// #region Main
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+
+createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+    <VideoPlayer youtubeVideoId="dQw4w9WgXcQ" />
+  </React.StrictMode>
+);
+// #endregion Main

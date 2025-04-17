@@ -1,0 +1,7 @@
+/* #region Background */
+.video-player-container {
+  width: 400px;
+  height: 250px;
+  border-radius: 5%;
+  background-color: blueviolet;
+}
