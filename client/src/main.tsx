@@ -15,7 +15,7 @@ import './shared/styles/general.css';
 import './shared/styles/fonts.css';
 
 // Components
-import VideoPlayer from './components/videoplayer';
+import Miniplayer from './components/miniplayer';
 // #endregion Importss
 
 
@@ -27,7 +27,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <VideoPlayer youtubeVideoId="dQw4w9WgXcQ" />
+    <Miniplayer youtubeVideoId="dQw4w9WgXcQ" />
   </React.StrictMode>
 );
 // #endregion Main
