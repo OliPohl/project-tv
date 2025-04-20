@@ -7,6 +7,7 @@
  * @param {string} [id] - Element id for the window.
  * @param {string} [className] - Additional CSS classes for the window.
  * @param {string} [anchors] - Anchors the player can snap to. The first anchor is the default anchor. Possible anchors: NW, N, NE, E, SE, S, SW, W
+ * @param {number} [anchor_margin] - Margin between the window and the anchor
  * @returns {React.ReactElement} - A draggable window component.
  * @example
  * <DragableWindow className="video-player-container" anchors="SE NW NE SW">
@@ -16,7 +17,6 @@
 
 // #region Imports
 import React, { useRef, useEffect } from 'react';
-import { lerpVec2 } from '../../shared/utils/math';
 import { Vector2 } from '../../shared/utils/vector2';
 // #endregion
 
@@ -27,57 +27,60 @@ interface DragableWindowProps {
   id?: string;
   className?: string;
   anchors: string;
+  margin?: number
 }
 // #endregion Interface
 
 
 // #region DragableWindow
-function DragableWindow({ children, id ='', className = '' , anchors}: DragableWindowProps) {
+function DragableWindow({ children, id ='', className = '' , anchors, margin: margin = 15}: DragableWindowProps) {
   const windowRef = useRef<HTMLDivElement>(null);
 
+  // Constants
   const DRAG_LERP_FACTOR = 0.2;
   const SNAP_LERP_FACTOR = 0.05;
   const SNAP_PROJECTION_FACTOR = 25;
 
   // calculate anchor position from anchor string
-  const MARGIN = 15;
-  const anchor_pos = (anchor: string, element: HTMLDivElement) => {
+  const anchorToVec2 = (anchor: string, element: HTMLDivElement) => {
     switch (anchor) {
       case "NE":
-        return [MARGIN, MARGIN]
+        return new Vector2(margin, margin)
       case "N":
-        return [window.innerWidth / 2 - element.offsetWidth / 2, MARGIN]
+        return new Vector2(window.innerWidth / 2 - element.offsetWidth / 2, margin)
       case "NW":
-        return [window.innerWidth - element.offsetWidth - MARGIN, MARGIN]
+        return new Vector2(window.innerWidth - element.offsetWidth - margin, margin)
       case "W":
-        return [MARGIN, window.innerHeight / 2 - element.offsetHeight / 2]
-      case "E":
-        return [window.innerWidth - element.offsetWidth - MARGIN, window.innerHeight / 2 - element.offsetHeight / 2]
+        return new Vector2(margin, window.innerHeight / 2 - element.offsetHeight / 2)
+        case "E":
+        return new Vector2(window.innerWidth - element.offsetWidth - margin, window.innerHeight / 2 - element.offsetHeight / 2)
       case "SW":
-        return [MARGIN, window.innerHeight - element.offsetHeight - MARGIN]
+        return new Vector2(margin, window.innerHeight - element.offsetHeight - margin)
       case "S":
-        return [window.innerWidth / 2 - element.offsetWidth / 2, window.innerHeight - element.offsetHeight - MARGIN]
+        return new Vector2(window.innerWidth / 2 - element.offsetWidth / 2, window.innerHeight - element.offsetHeight - margin)
       case "SE":
-        return [window.innerWidth - element.offsetWidth - MARGIN, window.innerHeight - element.offsetHeight - MARGIN]
+        return new Vector2(window.innerWidth - element.offsetWidth - margin, window.innerHeight - element.offsetHeight - margin)
       default:
-        return [MARGIN, MARGIN]
+        return new Vector2(margin, margin)
     }
   }
+  // Anchor strings as array
+  const anchorsArray = anchors.split(" ");
 
   // Sets window position
-  const set_window_pos = (element: HTMLDivElement, pos: number[]) => { element.style.left = `${pos[0]}px`; element.style.top = `${pos[1]}px`;}
+  const setWindowPos = (element: HTMLDivElement, pos: Vector2) => { element.style.left = `${pos.x}px`; element.style.top = `${pos.y}px`;}
 
   useEffect(() => {
     const windowElement = windowRef.current;
     if (!windowElement) return;
     // Add resize event listener
-    const onWindowResize = () => {target_pos = anchor_pos(anchors.split(" ")[0], windowElement); requestAnimationFrame(updatePosition);};
+    const onWindowResize = () => {targetPos = anchorToVec2(anchorsArray[0], windowElement); requestAnimationFrame(updatePosition);}; // TODO: make to closest
     window.addEventListener('resize', onWindowResize);
 
     // Set initial position to the first anchor
-    let target_pos = anchor_pos(anchors.split(" ")[0], windowElement);
-    set_window_pos(windowElement, target_pos);
-    let current_pos = target_pos;
+    let targetPos = anchorToVec2(anchorsArray[0], windowElement);
+    let currentPos = targetPos;
+    setWindowPos(windowElement, targetPos);
     
     // Set initial values
     let isDragging = false;
@@ -86,10 +89,10 @@ function DragableWindow({ children, id ='', className = '' , anchors}: DragableW
 
     const updatePosition = () => {
       const lerpFactor = isDragging ? DRAG_LERP_FACTOR : SNAP_LERP_FACTOR;
-      current_pos = lerpVec2(current_pos, target_pos, lerpFactor);
-      set_window_pos(windowElement, current_pos);
+      currentPos = Vector2.lerp(currentPos, targetPos, lerpFactor);
+      setWindowPos(windowElement, currentPos);
 
-      if ( Math.abs(current_pos[0] - target_pos[0]) > 0.5 || Math.abs(current_pos[1] - target_pos[1]) > 0.5 || isDragging ) {
+      if (Vector2.distance(currentPos, targetPos) > 1 || isDragging ) {
         requestAnimationFrame(updatePosition);
       }
     };
@@ -97,26 +100,20 @@ function DragableWindow({ children, id ='', className = '' , anchors}: DragableW
     const dragStart = (e: MouseEvent) => {
       e.preventDefault();
       isDragging = true;
-
-      lastMouse = new Vector2(e.clientX, e.clientY);
       lastMove = Vector2.ZERO;
+      lastMouse = new Vector2(e.clientX, e.clientY);
 
       document.addEventListener("mousemove", dragMove);
       document.addEventListener("mouseup", dragEnd);
-
       requestAnimationFrame(updatePosition);
     };
+    windowElement.addEventListener("mousedown", dragStart);
 
     const dragMove = (e: MouseEvent) => {
-      const dx = e.clientX - lastMouse.x;
-      const dy = e.clientY - lastMouse.y;
-
+      const delta = new Vector2(e.clientX - lastMouse.x, e.clientY - lastMouse.y);
       lastMouse = new Vector2(e.clientX, e.clientY);
 
-      target_pos[0] += dx;
-      target_pos[1] += dy;
-
-      lastMouse = new Vector2(dx, dy);
+      targetPos = Vector2.add(targetPos, delta);
     };
 
     const dragEnd = () => {
@@ -125,28 +122,23 @@ function DragableWindow({ children, id ='', className = '' , anchors}: DragableW
       document.removeEventListener("mouseup", dragEnd);
 
       // Predict future position based on velocity
-      const projected_pos = [target_pos[0] + lastMove.x * SNAP_PROJECTION_FACTOR, target_pos[1] + lastMove.y * SNAP_PROJECTION_FACTOR];
+      const projectedPos = new Vector2(targetPos.x + lastMove.x * SNAP_PROJECTION_FACTOR, targetPos.y + lastMove.y * SNAP_PROJECTION_FACTOR);
 
       // Find closest anchor to projected point
-      let closest_anchor_pos = anchor_pos(anchors.split(" ")[0], windowElement);
-      let minDist = distance2D(projected_pos[0], projected_pos[1], closest_anchor_pos[0], closest_anchor_pos[1]);
+      let closestAnchorPos = anchorToVec2(anchorsArray[0], windowElement);
+      let minDist = Vector2.distance(projectedPos, closestAnchorPos);
 
-      for (let i = 1; i < anchors.split(" ").length; i++) {
-        const dist = distance2D(projected_pos[0], projected_pos[1], anchor_pos(anchors.split(" ")[i], windowElement)[0], anchor_pos(anchors.split(" ")[i], windowElement)[1]);
+      anchorsArray.forEach(anchor => {
+        const dist = Vector2.distance(projectedPos, anchorToVec2(anchor, windowElement));
         if (dist < minDist) {
-          closest_anchor_pos = anchor_pos(anchors.split(" ")[i], windowElement);
+          closestAnchorPos = anchorToVec2(anchor, windowElement);
           minDist = dist;
         }
-      }
+      });
 
-      target_pos = closest_anchor_pos;
+      targetPos = closestAnchorPos;
       requestAnimationFrame(updatePosition);
     };
-
-    const distance2D = (x1: number, y1: number, x2: number, y2: number) =>
-      Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-
-    windowElement.addEventListener("mousedown", dragStart);
 
     return () => {
       windowElement.removeEventListener("mousedown", dragStart);
