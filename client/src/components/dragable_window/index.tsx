@@ -41,7 +41,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   // #endregion
 
 
-  // #region utils
+  // #region Utils
   /**
    * Converts an anchor string to a Vector2 position
    * @param anchor - The anchor string (e.g., "NE", "SW")
@@ -74,7 +74,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     element.style.left = `${pos.x}px`;
     element.style.top = `${pos.y}px`;
   };
-  // #endregion utils
+  // #endregion Utils
 
   useEffect(() => {
     const windowElement = windowRef.current;
