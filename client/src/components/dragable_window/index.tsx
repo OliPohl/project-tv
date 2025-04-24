@@ -62,6 +62,27 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     }
   };
 
+  /** 
+   * Converts a Vector2 position to an anchor string
+   * @param vec2 - The Vector2 position
+   * @param element - The window element to calculate positions relative to
+   * @returns Anchor string representing the closest anchor position
+   */
+  const vec2ToAnchor = (vec2: Vector2, element: HTMLDivElement) => {
+    const anchors = ["NE", "N", "NW", "W", "E", "SW", "S", "SE"];
+    let minDist = Number.MAX_VALUE;
+    let closestAnchor = anchors[0];
+    anchors.forEach(anchor => {
+      const anchorVec2 = anchorToVec2(anchor, element);
+      const dist = Vector2.distance(vec2, anchorVec2);
+      if (dist < minDist) {
+        minDist = dist;
+        closestAnchor = anchor;
+      }
+    });
+    return closestAnchor;
+  }
+
   // Convert space-separated anchor string to array
   const anchorsArray = anchors.split(" ");
 
@@ -103,9 +124,9 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     if (!windowElement) return;
 
     // #region Resize
-    /**Handles window resize by resetting to closest anchor */
+    /**Handles window resize by resetting to current anchor */
     const onWindowResize = () => {
-      targetPos = closestAnchorVec2(targetPos, windowElement);
+      targetPos = anchorToVec2(currentAnchor, windowElement);
       requestAnimationFrame(updatePosition);
     };
     window.addEventListener('resize', onWindowResize);
@@ -116,6 +137,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // Set initial position to first anchor
     let targetPos = anchorToVec2(anchorsArray[0], windowElement);
     let currentPos = targetPos;
+    let currentAnchor = anchorsArray[0];
     setWindowPos(windowElement, targetPos);
     
     // Drag state
@@ -189,6 +211,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       );
 
       targetPos = closestAnchorVec2(projectedPos, windowElement);
+      currentAnchor = vec2ToAnchor(targetPos, windowElement);
       requestAnimationFrame(updatePosition);
     };
     // #endregion Drag End
