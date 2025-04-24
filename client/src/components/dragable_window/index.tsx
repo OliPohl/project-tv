@@ -65,6 +65,28 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   // Convert space-separated anchor string to array
   const anchorsArray = anchors.split(" ");
 
+    /**
+   * Gets the closest anchor position to a given Vector2
+   * @param position - The position to find the closest anchor
+   * @param element - The window element to calculate positions relative to
+   * @returns Vector2 representing the closest anchor position
+   */
+  const closestAnchorVec2 = (position : Vector2, element : HTMLDivElement) => {
+    let currentClosestVec2 = anchorToVec2(anchorsArray[0], element);
+    let minDist = Vector2.distance(position, currentClosestVec2);
+
+    anchorsArray.forEach(anchor => {
+      const anchorVec2 = anchorToVec2(anchor, element);
+      const dist = Vector2.distance(position, anchorVec2);
+      if (dist < minDist) {
+        currentClosestVec2 = anchorVec2;
+        minDist = dist;
+      }
+    });
+    return currentClosestVec2;
+  }
+
+
   /**
    * Sets the window's position
    * @param element - The window element
@@ -81,13 +103,12 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     if (!windowElement) return;
 
     // #region Resize
-    /**Handles window resize by resetting to first anchor */
+    /**Handles window resize by resetting to closest anchor */
     const onWindowResize = () => {
-      targetPos = anchorToVec2(anchorsArray[0], windowElement);
+      targetPos = closestAnchorVec2(targetPos, windowElement);
       requestAnimationFrame(updatePosition);
     };
     window.addEventListener('resize', onWindowResize);
-    // TODO: Snap to closest anchor instead of first
     // #endregion Resize
 
 
@@ -167,20 +188,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
         targetPos.y + lastMove.y * SNAP_PROJECTION_FACTOR
       );
 
-      // Find closest anchor to projected position
-      let closestAnchorPos = anchorToVec2(anchorsArray[0], windowElement);
-      let minDist = Vector2.distance(projectedPos, closestAnchorPos);
-
-      anchorsArray.forEach(anchor => {
-        const anchorPos = anchorToVec2(anchor, windowElement);
-        const dist = Vector2.distance(projectedPos, anchorPos);
-        if (dist < minDist) {
-          closestAnchorPos = anchorPos;
-          minDist = dist;
-        }
-      });
-
-      targetPos = closestAnchorPos;
+      targetPos = closestAnchorVec2(projectedPos, windowElement);
       requestAnimationFrame(updatePosition);
     };
     // #endregion Drag End
