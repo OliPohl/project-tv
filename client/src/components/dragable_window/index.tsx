@@ -51,9 +51,9 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
    */
   const anchorToVec2 = (anchor: string, element: HTMLDivElement) => {
     switch (anchor) {
-      case "NE": return new Vector2(margin, margin);
+      case "NW": return new Vector2(margin, margin);
       case "N": return new Vector2(window.innerWidth / 2 - element.offsetWidth / 2, margin);
-      case "NW": return new Vector2(window.innerWidth - element.offsetWidth - margin, margin);
+      case "NE": return new Vector2(window.innerWidth - element.offsetWidth - margin, margin);
       case "W": return new Vector2(margin, window.innerHeight / 2 - element.offsetHeight / 2);
       case "E": return new Vector2(window.innerWidth - element.offsetWidth - margin, window.innerHeight / 2 - element.offsetHeight / 2);
       case "SW": return new Vector2(margin, window.innerHeight - element.offsetHeight - margin);
@@ -116,18 +116,24 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
    * @param element - The window element to calculate positions relative to
    * @returns Vector2 representing the closest anchor position
    */
-  const closestAnchorVec2Angle = (position : Vector2, direction : Vector2, element : HTMLDivElement) => {    
+  const closestAnchorVec2Angle = (position : Vector2, direction : Vector2, element : HTMLDivElement) => {
     let currentClosestVec2 = anchorToVec2(anchorsArray[0], element);
-    let minAngle = direction.angleTo(Vector2.subtract(currentClosestVec2, position));
+    let minAngle = Number.MAX_VALUE;
 
     anchorsArray.forEach(anchor => {
       const anchorVec2 = anchorToVec2(anchor, element);
       const angle = direction.angleTo(Vector2.subtract(anchorVec2, position));
-      if (angle < minAngle) {
-        currentClosestVec2 = anchorVec2;
-        minAngle = angle;
+
+      if (Math.abs(angle - minAngle) < 0.1) {
+        const dist = Vector2.distance(position, anchorVec2);
+        if (dist < Vector2.distance(position, currentClosestVec2)) {
+          currentClosestVec2 = anchorVec2;
+        }
+      } else if (angle < minAngle) {
+          currentClosestVec2 = anchorVec2;
+          minAngle = angle;
       }
-    });
+      });
     return currentClosestVec2;
   }
 
@@ -135,11 +141,11 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   /**
    * Sets the window's position
    * @param element - The window element
-   * @param pos - The new position as Vector2
+   * @param position - The new position as Vector2
    */
-  const setWindowPos = (element: HTMLDivElement, pos: Vector2) => {
-    element.style.left = `${pos.x}px`;
-    element.style.top = `${pos.y}px`;
+  const setWindowPos = (element: HTMLDivElement, position: Vector2) => {
+    element.style.left = `${position.x}px`;
+    element.style.top = `${position.y}px`;
   };
   // #endregion Utils
 
@@ -233,15 +239,18 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
           moveAverage = Vector2.add(moveAverage, lastMove[i]);
         }
         moveAverage = Vector2.multiply(moveAverage, new Vector2(1 / lastMove.length, 1 / lastMove.length));
-
+        
+        // If the window is moving fast enough, snap to the nearest anchor based on angle.
         if (moveAverage.magnitude() >  ANCHRO_SNAP_SPEED_THRESHOLD) {
           targetPos = closestAnchorVec2Angle(currentPos, moveAverage.normalize(), windowElement);
           currentAnchor = vec2ToAnchor(targetPos, windowElement);
+          console.log("Snapping to anchor: " + currentAnchor + "\n ------------------");
           requestAnimationFrame(updatePosition);
           return;
         }
       }
 
+      // Otherwise, snap to the nearest anchor based on distance
       targetPos = closestAnchorVec2Dist(targetPos, windowElement);
       currentAnchor = vec2ToAnchor(targetPos, windowElement);
       requestAnimationFrame(updatePosition);
@@ -262,8 +271,6 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #endregion Cleanup
   }, []);
 
-  // TODO: Hide window
-  // TODO: Make anchro snap smoother
   // #region HTML Element
   return (
     <div 
