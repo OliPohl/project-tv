@@ -35,9 +35,10 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   const windowRef = useRef<HTMLDivElement>(null);
 
   // #region constants
-  const DRAG_LERP_FACTOR = 0.2;     // Smoothing factor during drag
-  const SNAP_LERP_FACTOR = 0.05;    // Smoothing factor when snapping
-  const SNAP_PROJECTION_FACTOR = 25; // How much to project movement for snap prediction
+  const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
+  const MOVE_AVERAGE_COUNT = 5;           // Number of previous moves to average for speed
+  const SNAP_LERP_FACTOR = 0.022;     // Smoothing factor during snaü
+  const ANCHRO_SNAP_SPEED_THRESHOLD = 2; // Threshold for anchor snap
   // #endregion
 
 
@@ -87,12 +88,12 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   const anchorsArray = anchors.split(" ");
 
     /**
-   * Gets the closest anchor position to a given Vector2
+   * Gets the closest anchor position to a given Vector2 by distance
    * @param position - The position to find the closest anchor
    * @param element - The window element to calculate positions relative to
    * @returns Vector2 representing the closest anchor position
    */
-  const closestAnchorVec2 = (position : Vector2, element : HTMLDivElement) => {
+  const closestAnchorVec2Dist = (position : Vector2, element : HTMLDivElement) => {
     let currentClosestVec2 = anchorToVec2(anchorsArray[0], element);
     let minDist = Vector2.distance(position, currentClosestVec2);
 
@@ -102,6 +103,29 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       if (dist < minDist) {
         currentClosestVec2 = anchorVec2;
         minDist = dist;
+      }
+    });
+    return currentClosestVec2;
+  }
+
+
+  /**
+   * Gets the closest anchor position to a given Vector2 by angle
+   * @param position - The position to find the closest anchor
+   * @param direction - The direction last move
+   * @param element - The window element to calculate positions relative to
+   * @returns Vector2 representing the closest anchor position
+   */
+  const closestAnchorVec2Angle = (position : Vector2, direction : Vector2, element : HTMLDivElement) => {    
+    let currentClosestVec2 = anchorToVec2(anchorsArray[0], element);
+    let minAngle = direction.angleTo(Vector2.subtract(currentClosestVec2, position));
+
+    anchorsArray.forEach(anchor => {
+      const anchorVec2 = anchorToVec2(anchor, element);
+      const angle = direction.angleTo(Vector2.subtract(anchorVec2, position));
+      if (angle < minAngle) {
+        currentClosestVec2 = anchorVec2;
+        minAngle = angle;
       }
     });
     return currentClosestVec2;
@@ -143,7 +167,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // Drag state
     let isDragging = false;
     let lastMouse = Vector2.ZERO;
-    let lastMove = Vector2.ZERO;
+    let lastMove: Vector2[] = [];
     // #endregion Default Values
 
 
@@ -170,7 +194,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     const dragStart = (e: MouseEvent) => {
       e.preventDefault();
       isDragging = true;
-      lastMove = Vector2.ZERO;
+      lastMove = [];
       lastMouse = new Vector2(e.clientX, e.clientY);
 
       document.addEventListener("mousemove", dragMove);
@@ -186,11 +210,10 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
      * @param e - Mouse event
      */
     const dragMove = (e: MouseEvent) => {
-      const delta = new Vector2(
-        e.clientX - lastMouse.x, 
-        e.clientY - lastMouse.y
-      );
-      lastMove = delta; // Track movement for snap prediction
+      const delta = new Vector2(e.clientX - lastMouse.x, e.clientY - lastMouse.y);
+      lastMove.push(delta);
+      while (lastMove.length > MOVE_AVERAGE_COUNT) lastMove.shift();
+
       lastMouse = new Vector2(e.clientX, e.clientY);
       targetPos = Vector2.add(targetPos, delta);
     };
@@ -204,13 +227,22 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       document.removeEventListener("mousemove", dragMove);
       document.removeEventListener("mouseup", dragEnd);
 
-      // Predict future position based on movement velocity
-      const projectedPos = new Vector2(
-        targetPos.x + lastMove.x * SNAP_PROJECTION_FACTOR,
-        targetPos.y + lastMove.y * SNAP_PROJECTION_FACTOR
-      );
+      if (lastMove[lastMove.length -1]){
+        let moveAverage = Vector2.ZERO;
+        for (let i = 0; i < lastMove.length; i++) {
+          moveAverage = Vector2.add(moveAverage, lastMove[i]);
+        }
+        moveAverage = Vector2.multiply(moveAverage, new Vector2(1 / lastMove.length, 1 / lastMove.length));
 
-      targetPos = closestAnchorVec2(projectedPos, windowElement);
+        if (moveAverage.magnitude() >  ANCHRO_SNAP_SPEED_THRESHOLD) {
+          targetPos = closestAnchorVec2Angle(currentPos, moveAverage.normalize(), windowElement);
+          currentAnchor = vec2ToAnchor(targetPos, windowElement);
+          requestAnimationFrame(updatePosition);
+          return;
+        }
+      }
+
+      targetPos = closestAnchorVec2Dist(targetPos, windowElement);
       currentAnchor = vec2ToAnchor(targetPos, windowElement);
       requestAnimationFrame(updatePosition);
     };
