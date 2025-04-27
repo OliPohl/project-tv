@@ -18,6 +18,7 @@
 // #region Imports
 import React, { useRef, useEffect } from 'react';
 import { Vector2 } from '../../shared/utils/vector2';
+import { anchorToVec2, vec2ToAnchor, closestAnchorVec2ByDistance, closestAnchorVec2ByAngle } from './anchors';
 // #endregion
 
 // #region Interface
@@ -43,100 +44,8 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
 
 
   // #region Utils
-  /**
-   * Converts an anchor string to a Vector2 position
-   * @param anchor - The anchor string (e.g., "NE", "SW")
-   * @param element - The window element to calculate positions relative to
-   * @returns Vector2 representing the anchor position
-   */
-  const anchorToVec2 = (anchor: string, element: HTMLDivElement) => {
-    switch (anchor) {
-      case "NW": return new Vector2(margin, margin);
-      case "N": return new Vector2(window.innerWidth / 2 - element.offsetWidth / 2, margin);
-      case "NE": return new Vector2(window.innerWidth - element.offsetWidth - margin, margin);
-      case "W": return new Vector2(margin, window.innerHeight / 2 - element.offsetHeight / 2);
-      case "E": return new Vector2(window.innerWidth - element.offsetWidth - margin, window.innerHeight / 2 - element.offsetHeight / 2);
-      case "SW": return new Vector2(margin, window.innerHeight - element.offsetHeight - margin);
-      case "S": return new Vector2(window.innerWidth / 2 - element.offsetWidth / 2, window.innerHeight - element.offsetHeight - margin);
-      case "SE": return new Vector2(window.innerWidth - element.offsetWidth - margin, window.innerHeight - element.offsetHeight - margin);
-      default: return new Vector2(margin, margin);
-    }
-  };
-
-  /** 
-   * Converts a Vector2 position to an anchor string
-   * @param vec2 - The Vector2 position
-   * @param element - The window element to calculate positions relative to
-   * @returns Anchor string representing the closest anchor position
-   */
-  const vec2ToAnchor = (vec2: Vector2, element: HTMLDivElement) => {
-    const anchors = ["NE", "N", "NW", "W", "E", "SW", "S", "SE"];
-    let minDist = Number.MAX_VALUE;
-    let closestAnchor = anchors[0];
-    anchors.forEach(anchor => {
-      const anchorVec2 = anchorToVec2(anchor, element);
-      const dist = Vector2.distance(vec2, anchorVec2);
-      if (dist < minDist) {
-        minDist = dist;
-        closestAnchor = anchor;
-      }
-    });
-    return closestAnchor;
-  }
-
   // Convert space-separated anchor string to array
   const anchorsArray = anchors.split(" ");
-
-    /**
-   * Gets the closest anchor position to a given Vector2 by distance
-   * @param position - The position to find the closest anchor
-   * @param element - The window element to calculate positions relative to
-   * @returns Vector2 representing the closest anchor position
-   */
-  const closestAnchorVec2Dist = (position : Vector2, element : HTMLDivElement) => {
-    let currentClosestVec2 = anchorToVec2(anchorsArray[0], element);
-    let minDist = Vector2.distance(position, currentClosestVec2);
-
-    anchorsArray.forEach(anchor => {
-      const anchorVec2 = anchorToVec2(anchor, element);
-      const dist = Vector2.distance(position, anchorVec2);
-      if (dist < minDist) {
-        currentClosestVec2 = anchorVec2;
-        minDist = dist;
-      }
-    });
-    return currentClosestVec2;
-  }
-
-
-  /**
-   * Gets the closest anchor position to a given Vector2 by angle
-   * @param position - The position to find the closest anchor
-   * @param direction - The direction last move
-   * @param element - The window element to calculate positions relative to
-   * @returns Vector2 representing the closest anchor position
-   */
-  const closestAnchorVec2Angle = (position : Vector2, direction : Vector2, element : HTMLDivElement) => {
-    let currentClosestVec2 = anchorToVec2(anchorsArray[0], element);
-    let minAngle = Number.MAX_VALUE;
-
-    anchorsArray.forEach(anchor => {
-      const anchorVec2 = anchorToVec2(anchor, element);
-      const angle = direction.angleTo(Vector2.subtract(anchorVec2, position));
-
-      if (Math.abs(angle - minAngle) < 0.1) {
-        const dist = Vector2.distance(position, anchorVec2);
-        if (dist < Vector2.distance(position, currentClosestVec2)) {
-          currentClosestVec2 = anchorVec2;
-        }
-      } else if (angle < minAngle) {
-          currentClosestVec2 = anchorVec2;
-          minAngle = angle;
-      }
-      });
-    return currentClosestVec2;
-  }
-
 
   /**
    * Sets the window's position
@@ -156,7 +65,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #region Resize
     /**Handles window resize by resetting to current anchor */
     const onWindowResize = () => {
-      targetPos = anchorToVec2(currentAnchor, windowElement);
+      targetPos = anchorToVec2(currentAnchor, margin, windowElement);
       requestAnimationFrame(updatePosition);
     };
     window.addEventListener('resize', onWindowResize);
@@ -165,7 +74,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
 
     // #region Default Values
     // Set initial position to first anchor
-    let targetPos = anchorToVec2(anchorsArray[0], windowElement);
+    let targetPos = anchorToVec2(anchorsArray[0], margin, windowElement);
     let currentPos = targetPos;
     let currentAnchor = anchorsArray[0];
     setWindowPos(windowElement, targetPos);
@@ -242,17 +151,16 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
         
         // If the window is moving fast enough, snap to the nearest anchor based on angle.
         if (moveAverage.magnitude() >  ANCHRO_SNAP_SPEED_THRESHOLD) {
-          targetPos = closestAnchorVec2Angle(currentPos, moveAverage.normalize(), windowElement);
-          currentAnchor = vec2ToAnchor(targetPos, windowElement);
-          console.log("Snapping to anchor: " + currentAnchor + "\n ------------------");
+          targetPos = closestAnchorVec2ByAngle(currentPos, moveAverage.normalize(), anchorsArray, margin, windowElement);
+          currentAnchor = vec2ToAnchor(targetPos, margin, windowElement);
           requestAnimationFrame(updatePosition);
           return;
         }
       }
 
       // Otherwise, snap to the nearest anchor based on distance
-      targetPos = closestAnchorVec2Dist(targetPos, windowElement);
-      currentAnchor = vec2ToAnchor(targetPos, windowElement);
+      targetPos = closestAnchorVec2ByDistance(targetPos, anchorsArray, margin, windowElement);
+      currentAnchor = vec2ToAnchor(targetPos, margin, windowElement);
       requestAnimationFrame(updatePosition);
     };
     // #endregion Drag End
@@ -270,6 +178,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     };
     // #endregion Cleanup
   }, []);
+  //TODO: variable speed on distance snap lerp
 
   // #region HTML Element
   return (
