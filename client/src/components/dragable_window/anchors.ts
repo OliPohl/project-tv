@@ -1,5 +1,5 @@
 /**
- * Util functions for anchorss
+ * Util functions for anchors
  * 
  * @module
  * @requires Vector2
