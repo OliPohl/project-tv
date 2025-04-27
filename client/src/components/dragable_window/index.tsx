@@ -178,7 +178,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     };
     // #endregion Cleanup
   }, []);
-  //TODO: variable speed on distance snap lerp
+  //TODO: variable speed on distance snap lerp and fix drag end to distance speed value
 
   // #region HTML Element
   return (
