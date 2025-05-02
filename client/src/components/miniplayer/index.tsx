@@ -6,7 +6,7 @@
  * @param {string} youtubeVideoId - The ID of the YouTube video to be played.
  * @returns {React.ReactElement} - Miniplayer component.
  * @example 
- * <Miniplayer youtubeVideoId="dQw4w9WgXcQ" />
+ * <Miniplayer youtubeVideoId="FJfwehhzIhw" />
  */
 
 // #region Imports
@@ -20,12 +20,10 @@ import DragableWindow from '../dragable_window';
 
 // #region Miniplayer
 function Miniplayer({ youtubeVideoId }: { youtubeVideoId: string }) {
+  console.log(youtubeVideoId)
   return (
     <DragableWindow className="miniplayer-container" anchors="SW NW NE SE">
-      {/* Placeholder for video player implementation */}
-      <div className="iframe-placeholder">
-        Video player will render: {youtubeVideoId}
-      </div>
+      <iframe id="miniplayer-video" src={"https://www.youtube.com/embed/" + {youtubeVideoId} + "?autoplay=1&controls=0&modestbranding=1&mute=1"} />
     </DragableWindow>
   )
 }

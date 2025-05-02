@@ -39,7 +39,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
   const MOVE_AVERAGE_COUNT = 5;           // Number of previous moves to average for speed
   const SNAP_LERP_FACTOR = 0.022;     // Smoothing factor during snaü
-  const ANCHRO_SNAP_SPEED_THRESHOLD = 2; // Threshold for anchor snap
+  const ANCHOR_SNAP_SPEED_THRESHOLD = 2; // Threshold for anchor snap
   // #endregion
 
 
@@ -150,7 +150,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
         moveAverage = Vector2.multiply(moveAverage, new Vector2(1 / lastMove.length, 1 / lastMove.length));
         
         // If the window is moving fast enough, snap to the nearest anchor based on angle.
-        if (moveAverage.magnitude() >  ANCHRO_SNAP_SPEED_THRESHOLD) {
+        if (moveAverage.magnitude() >  ANCHOR_SNAP_SPEED_THRESHOLD) {
           targetPos = closestAnchorVec2ByAngle(currentPos, moveAverage.normalize(), anchorsArray, margin, windowElement);
           currentAnchor = vec2ToAnchor(targetPos, margin, windowElement);
           requestAnimationFrame(updatePosition);

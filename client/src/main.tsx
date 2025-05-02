@@ -27,7 +27,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <Miniplayer youtubeVideoId="dQw4w9WgXcQ" />
+    <Miniplayer youtubeVideoId="FJfwehhzIhw" />
   </React.StrictMode>
 );
 // #endregion Main

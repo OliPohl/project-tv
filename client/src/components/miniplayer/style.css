@@ -4,4 +4,11 @@
   height: 250px;
   border-radius: 5%;
   background-color: blueviolet;
+  overflow: hidden;
+}
+
+#miniplayer-video {
+  width: 100%;
+  height: 100%;
+  pointer-events:none;
 }
