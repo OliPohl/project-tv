@@ -20,7 +20,7 @@ import DragableWindow from '../dragable_window';
 // #region Miniplayer
 function Miniplayer({ youtubeVideoId }: { youtubeVideoId: string }) {
   return (
-    <DragableWindow className="miniplayer-container" anchors="SW NW NE SE" resize={true}>
+    <DragableWindow className="miniplayer-container noselect" anchors="SW NW NE SE" resize={true}>
       <iframe id="miniplayer-video" src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=0&modestbranding=1&mute=1`} />
     </DragableWindow>
   )

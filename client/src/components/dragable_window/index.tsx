@@ -41,7 +41,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   // #region constants
   const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
   const SNAP_LERP_FACTOR = 0.022;         // Smoothing factor during snaü
-  const ANCHOR_SNAP_SPEED_THRESHOLD = 2;  // Threshold for anchor snap
+  const ANCHOR_SNAP_SPEED_THRESHOLD = 1;  // Threshold for anchor snap
 
   const WINDOW_MIN_WIDTH = 200;                           // Minimum width of the window
   const WINDOW_MAX_WIDTH = () => window.innerWidth / 2;   // Maximum width of the window
@@ -167,12 +167,13 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #region Animation
     /** Animation loop that smoothly updates window position */
     const updatePosition = () => {
+      //TODO: Relpace monkey lerp with actual lerp
       const lerpFactor = isDragging ? DRAG_LERP_FACTOR : SNAP_LERP_FACTOR;
       currentPos = Vector2.lerp(currentPos, targetPos, lerpFactor);
       setWindowPos(windowElement, currentPos);
 
       // Continue animation if not at target or still dragging
-      if (Vector2.distance(currentPos, targetPos) > 1 || isDragging) {
+      if (isDragging || Vector2.distance(currentPos, targetPos) > 1) {
         requestAnimationFrame(updatePosition);
       }
     };
@@ -254,9 +255,6 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     };
     // #endregion Cleanup
   }, []);
-  //TODO: variable speed on distance snap lerp and fix drag end to distance speed value
-  //TODO?: maybe add a little bounce when snapping to anchors
-
   //TODO: Save positions and size in cookies
 
   // #region HTML Element
