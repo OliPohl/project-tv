@@ -90,7 +90,12 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
 
     // #region Browser Resize
     /**Handles browser resize by resetting to current anchor */
+    let lastWindowWidthPercentage = windowElement.offsetWidth / window.innerWidth;
     const onBrowserResize = () => {
+      if (resize && resizer) {
+        const newWidth = Math.max(WINDOW_MIN_WIDTH, Math.min(WINDOW_MAX_WIDTH(), window.innerWidth * lastWindowWidthPercentage));
+        setWindowSize(windowElement, new Vector2(newWidth, newWidth / aspectRatio));
+      }
       setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
     };
     window.addEventListener('resize', onBrowserResize);
@@ -125,6 +130,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   
       const newWidth = getNewWindowWidth(resizer, windowStartSize, delta, WINDOW_MIN_WIDTH, WINDOW_MAX_WIDTH());
       setWindowSize(windowElement, new Vector2(newWidth, newWidth / aspectRatio));
+      lastWindowWidthPercentage = windowElement.offsetWidth / window.innerWidth;
       setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
       //TODO: Tablet window resize support on pinch
     };
@@ -249,6 +255,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #endregion Cleanup
   }, []);
   //TODO: variable speed on distance snap lerp and fix drag end to distance speed value
+  //TODO?: maybe add a little bounce when snapping to anchors
 
   //TODO: Save positions and size in cookies
 
