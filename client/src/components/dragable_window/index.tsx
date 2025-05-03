@@ -38,8 +38,8 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   // #region constants
   const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
   const MOVE_AVERAGE_COUNT = 5;           // Number of previous moves to average for speed
-  const SNAP_LERP_FACTOR = 0.022;     // Smoothing factor during snaü
-  const ANCHOR_SNAP_SPEED_THRESHOLD = 2; // Threshold for anchor snap
+  const SNAP_LERP_FACTOR = 0.022;         // Smoothing factor during snaü
+  const ANCHOR_SNAP_SPEED_THRESHOLD = 2;  // Threshold for anchor snap
   // #endregion
 
 
@@ -56,20 +56,97 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     element.style.left = `${position.x}px`;
     element.style.top = `${position.y}px`;
   };
+
+  const setWindowSize = (element: HTMLDivElement, size: Vector2) => {
+    element.style.width = `${size.x}px`;
+    element.style.height = `${size.y}px`;
+  }
+
+  const setResizerPos = (element: HTMLDivElement, anchor: string) => {
+    switch (anchor) {
+      case "NW": element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "auto";  element.style.right = "0";  element.style.cursor = "nw-resize"; break;
+      case "N": element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "50%"; element.style.right = "auto"; element.style.cursor = "n-resize"; break;
+      case "NE": element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "0"; element.style.right = "auto"; element.style.cursor = "ne-resize"; break;
+      case "W": element.style.top = "50%"; element.style.bottom = "auto"; element.style.left = "auto"; element.style.right = "0"; element.style.cursor = "w-resize"; break;
+      case "E": element.style.top = "50%"; element.style.bottom = "auto"; element.style.left = "0"; element.style.right = "auto"; element.style.cursor = "e-resize"; break;
+      case "SW": element.style.top = "0"; element.style.bottom = "auto"; element.style.left = "auto"; element.style.right = "0"; element.style.cursor = "sw-resize"; break;
+      case "S": element.style.top = "0"; element.style.bottom = "auto"; element.style.left = "50%"; element.style.right = "auto"; element.style.cursor = "s-resize"; break;
+      case "SE": element.style.top = "0"; element.style.bottom = "auto"; element.style.left = "0"; element.style.right = "auto"; element.style.cursor = "se-resize"; break;
+      default: element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "auto"; element.style.right = "0";
+    }
+  }
   // #endregion Utils
 
   useEffect(() => {
     const windowElement = windowRef.current;
     if (!windowElement) return;
 
-    // #region Resize
-    /**Handles window resize by resetting to current anchor */
-    const onWindowResize = () => {
+    // #region Browser Resize
+    /**Handles browser resize by resetting to current anchor */
+    const onBrowserResize = () => {
       targetPos = anchorToVec2(currentAnchor, margin, windowElement);
       requestAnimationFrame(updatePosition);
     };
-    window.addEventListener('resize', onWindowResize);
-    // #endregion Resize
+    window.addEventListener('resize', onBrowserResize);
+    // #endregion Browser Resize
+
+
+    // #region Resizer
+    const resizer = windowElement.querySelector('#resizer') as HTMLDivElement;
+    let isResizing = false;
+    const windowSize = () => new Vector2(windowElement.offsetWidth, windowElement.offsetHeight);
+    let windowStartSize = windowSize();
+    let aspectRatio = windowStartSize.x / windowStartSize.y;
+    let maxWidth = window.innerWidth / 2;
+    let resizeStartMouse = Vector2.ZERO;
+    
+    /** Handles resizer drag */
+    const resizerStart = (e: MouseEvent) => {
+      e.preventDefault();
+      isResizing = true;
+      resizeStartMouse = new Vector2(e.clientX, e.clientY);
+      windowStartSize = windowSize();
+
+      document.addEventListener("mousemove", resizerMove);
+      document.addEventListener("mouseup", resizerEnd);
+    };
+    resizer.addEventListener('mousedown', resizerStart);
+
+    const resizerMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      e.preventDefault();
+      const delta = new Vector2(e.clientX - resizeStartMouse.x, e.clientY - resizeStartMouse.y);
+    
+      // Resize based on horizontal drag
+      let newWidth;
+      switch (resizer.style.cursor) {
+        case "ne-resize":
+        case "se-resize":
+        case "e-resize":
+          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x - delta.x)); break;
+        case "nw-resize":
+        case "sw-resize":
+        case "w-resize":
+          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x + delta.x)); break;
+        case "n-resize":
+          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x + delta.y)); break;
+        case "s-resize":
+          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x - delta.y)); break;
+        default:
+          newWidth = windowStartSize.x;
+      }
+
+      setWindowSize(windowElement, new Vector2(newWidth, newWidth / aspectRatio));
+      setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
+      //TODO: Tablet window resize support on pinch
+    };
+
+    const resizerEnd = () => {
+      isResizing = false;
+      document.removeEventListener("mousemove", resizerMove);
+      document.removeEventListener("mouseup", resizerEnd);
+    };
+    // #endregion Resizer
 
 
     // #region Default Values
@@ -78,6 +155,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     let currentPos = targetPos;
     let currentAnchor = anchorsArray[0];
     setWindowPos(windowElement, targetPos);
+    setResizerPos(resizer, currentAnchor);
     
     // Drag state
     let isDragging = false;
@@ -107,10 +185,13 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
      * @param e - Mouse event
      */
     const dragStart = (e: MouseEvent) => {
+      if (isResizing) return;
       e.preventDefault();
       isDragging = true;
       lastMove = [];
       lastMouse = new Vector2(e.clientX, e.clientY);
+      targetPos = anchorToVec2(currentAnchor, margin, windowElement);
+      currentPos = targetPos;
 
       document.addEventListener("mousemove", dragMove);
       document.addEventListener("mouseup", dragEnd);
@@ -153,6 +234,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
         if (moveAverage.magnitude() >  ANCHOR_SNAP_SPEED_THRESHOLD) {
           targetPos = closestAnchorVec2ByAngle(currentPos, moveAverage.normalize(), anchorsArray, margin, windowElement);
           currentAnchor = vec2ToAnchor(targetPos, margin, windowElement);
+          setResizerPos(resizer, currentAnchor);
           requestAnimationFrame(updatePosition);
           return;
         }
@@ -161,6 +243,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       // Otherwise, snap to the nearest anchor based on distance
       targetPos = closestAnchorVec2ByDistance(targetPos, anchorsArray, margin, windowElement);
       currentAnchor = vec2ToAnchor(targetPos, margin, windowElement);
+      setResizerPos(resizer, currentAnchor);
       requestAnimationFrame(updatePosition);
     };
     // #endregion Drag End
@@ -174,11 +257,16 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       windowElement.removeEventListener("mousedown", dragStart);
       document.removeEventListener("mousemove", dragMove);
       document.removeEventListener("mouseup", dragEnd);
-      window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('resize', onBrowserResize);
+      document.removeEventListener("mousemove", resizerMove);
+      document.removeEventListener("mouseup", resizerEnd);
     };
     // #endregion Cleanup
   }, []);
+  //TODO: fix circling cursor feels like random anchor selected
   //TODO: variable speed on distance snap lerp and fix drag end to distance speed value
+
+  //TODO: Save positions and size in cookies
 
   // #region HTML Element
   return (
@@ -189,6 +277,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       style={{ position: 'absolute' }}
     >
       {children}
+      <div id="resizer" style={{ position: 'absolute', height: '15px', width: '15px' }}/>
     </div>
   );
   // #endregion HTML Element
