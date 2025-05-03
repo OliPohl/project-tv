@@ -8,6 +8,7 @@
  * @param {string} [className] - Additional CSS classes for the window.
  * @param {string} [anchors] - Anchors the window can snap to (space-separated). Possible values: NW, N, NE, E, SE, S, SW, W
  * @param {number} [margin=15] - Margin between the window and screen edges when snapped.
+ * @param {boolean} [resize=false] - Whether the window can be resized.
  * @returns {React.ReactElement} A draggable window component.
  * @example
  * <DragableWindow className="video-player" anchors="SE NW" margin={20}>
@@ -19,6 +20,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Vector2 } from '../../shared/utils/vector2';
 import { anchorToVec2, vec2ToAnchor, closestAnchorVec2ByDistance, closestAnchorVec2ByAngle } from './anchors';
+import { setResizerPos, getNewWindowWidth } from './resizer';
 // #endregion
 
 // #region Interface
@@ -28,18 +30,21 @@ interface DragableWindowProps {
   className?: string;
   anchors: string;
   margin?: number;
+  resize?: boolean;
 }
 // #endregion Interface
 
 // #region DragableWindow
-function DragableWindow({ children, id = '', className = '', anchors, margin = 15 }: DragableWindowProps) {
+function DragableWindow({ children, id = '', className = '', anchors, margin = 15, resize = false }: DragableWindowProps) {
   const windowRef = useRef<HTMLDivElement>(null);
 
   // #region constants
   const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
-  const MOVE_AVERAGE_COUNT = 1;           // Number of previous moves to average for speed
   const SNAP_LERP_FACTOR = 0.022;         // Smoothing factor during snaü
   const ANCHOR_SNAP_SPEED_THRESHOLD = 2;  // Threshold for anchor snap
+
+  const WINDOW_MIN_WIDTH = 200;                           // Minimum width of the window
+  const WINDOW_MAX_WIDTH = () => window.innerWidth / 2;   // Maximum width of the window
   // #endregion
 
 
@@ -57,23 +62,25 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     element.style.top = `${position.y}px`;
   };
 
+
+  /**
+   * Sets the window's size
+   * @param element - The window element
+   * @param size - The new size as Vector2
+   */
   const setWindowSize = (element: HTMLDivElement, size: Vector2) => {
     element.style.width = `${size.x}px`;
     element.style.height = `${size.y}px`;
   }
 
-  const setResizerPos = (element: HTMLDivElement, anchor: string) => {
-    switch (anchor) {
-      case "NW": element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "auto";  element.style.right = "0";  element.style.cursor = "nw-resize"; break;
-      case "N": element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "50%"; element.style.right = "auto"; element.style.cursor = "n-resize"; break;
-      case "NE": element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "0"; element.style.right = "auto"; element.style.cursor = "ne-resize"; break;
-      case "W": element.style.top = "50%"; element.style.bottom = "auto"; element.style.left = "auto"; element.style.right = "0"; element.style.cursor = "w-resize"; break;
-      case "E": element.style.top = "50%"; element.style.bottom = "auto"; element.style.left = "0"; element.style.right = "auto"; element.style.cursor = "e-resize"; break;
-      case "SW": element.style.top = "0"; element.style.bottom = "auto"; element.style.left = "auto"; element.style.right = "0"; element.style.cursor = "sw-resize"; break;
-      case "S": element.style.top = "0"; element.style.bottom = "auto"; element.style.left = "50%"; element.style.right = "auto"; element.style.cursor = "s-resize"; break;
-      case "SE": element.style.top = "0"; element.style.bottom = "auto"; element.style.left = "0"; element.style.right = "auto"; element.style.cursor = "se-resize"; break;
-      default: element.style.top = "auto"; element.style.bottom = "0"; element.style.left = "auto"; element.style.right = "0";
-    }
+
+  /**
+   * Gets the window's size
+   * @param element - The window element
+   * @returns The window's size as Vector2
+   */
+  const getWindowSize = (element: HTMLDivElement) => {
+    return new Vector2(element.offsetWidth, element.offsetHeight);
   }
   // #endregion Utils
 
@@ -93,57 +100,45 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #region Resizer
     const resizer = windowElement.querySelector('#resizer') as HTMLDivElement;
     let isResizing = false;
-    const windowSize = () => new Vector2(windowElement.offsetWidth, windowElement.offsetHeight);
-    let windowStartSize = windowSize();
-    let aspectRatio = windowStartSize.x / windowStartSize.y;
-    let maxWidth = window.innerWidth / 2;
+
+    // Setting default resizer values
     let resizeStartMouse = Vector2.ZERO;
-    
-    /** Handles resizer drag */
+    let windowStartSize = getWindowSize(windowElement);
+    let aspectRatio = windowStartSize.x / windowStartSize.y;
+
+    /** Handles resizer start */
     const resizerStart = (e: MouseEvent) => {
       e.preventDefault();
       isResizing = true;
       resizeStartMouse = new Vector2(e.clientX, e.clientY);
-      windowStartSize = windowSize();
+      windowStartSize = getWindowSize(windowElement);
 
       document.addEventListener("mousemove", resizerMove);
       document.addEventListener("mouseup", resizerEnd);
     };
-    resizer.addEventListener('mousedown', resizerStart);
 
+    /** Handles resizer move */
     const resizerMove = (e: MouseEvent) => {
       if (!isResizing) return;
       e.preventDefault();
       const delta = new Vector2(e.clientX - resizeStartMouse.x, e.clientY - resizeStartMouse.y);
-    
-      // Resize based on horizontal drag
-      let newWidth;
-      switch (resizer.style.cursor) {
-        case "ne-resize":
-        case "se-resize":
-        case "e-resize":
-          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x - delta.x)); break;
-        case "nw-resize":
-        case "sw-resize":
-        case "w-resize":
-          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x + delta.x)); break;
-        case "n-resize":
-          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x + delta.y)); break;
-        case "s-resize":
-          newWidth = Math.max(200, Math.min(maxWidth, windowStartSize.x - delta.y)); break;
-        default:
-          newWidth = windowStartSize.x;
-      }
-
+  
+      const newWidth = getNewWindowWidth(resizer, windowStartSize, delta, WINDOW_MIN_WIDTH, WINDOW_MAX_WIDTH());
       setWindowSize(windowElement, new Vector2(newWidth, newWidth / aspectRatio));
       setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
       //TODO: Tablet window resize support on pinch
     };
 
+    /** Handles resizer end */
     const resizerEnd = () => {
       isResizing = false;
       document.removeEventListener("mousemove", resizerMove);
       document.removeEventListener("mouseup", resizerEnd);
+    };
+
+    if (resize && resizer) {
+      // Adding resizer event listeners to the resizer
+      resizer.addEventListener('mousedown', resizerStart);
     };
     // #endregion Resizer
 
