@@ -84,8 +84,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #region Browser Resize
     /**Handles browser resize by resetting to current anchor */
     const onBrowserResize = () => {
-      targetPos = anchorToVec2(currentAnchor, margin, windowElement);
-      requestAnimationFrame(updatePosition);
+      setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
     };
     window.addEventListener('resize', onBrowserResize);
     // #endregion Browser Resize
