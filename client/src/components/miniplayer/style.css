@@ -1,7 +1,5 @@
 /* #region Background */
 .miniplayer-container {
-  width: 426px;
-  height: 240px;
   border-radius: 15px;
   background-color: rgb(0, 0, 0, 0);
   overflow: hidden;

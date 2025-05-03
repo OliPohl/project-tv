@@ -20,7 +20,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Vector2 } from '../../shared/utils/vector2';
 import { anchorToVec2, vec2ToAnchor, closestAnchorVec2ByDistance, closestAnchorVec2ByAngle } from './anchors';
-import { setResizerPos, getNewWindowWidth } from './resizer';
+import { setResizerPos, getDeltaWindowSize, widthToWindowSize } from './resizer';
 // #endregion
 
 // #region Interface
@@ -45,6 +45,8 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
 
   const WINDOW_MIN_WIDTH = 200;                           // Minimum width of the window
   const WINDOW_MAX_WIDTH = () => window.innerWidth / 2;   // Maximum width of the window
+  const DEFAULT_WINDOW_WIDTH = () => window.innerWidth / 5; // Default width of the window
+  const ASPECT_RATIO = 16 / 9;
   // #endregion
 
 
@@ -93,8 +95,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     let lastWindowWidthPercentage = windowElement.offsetWidth / window.innerWidth;
     const onBrowserResize = () => {
       if (resize && resizer) {
-        const newWidth = Math.max(WINDOW_MIN_WIDTH, Math.min(WINDOW_MAX_WIDTH(), window.innerWidth * lastWindowWidthPercentage));
-        setWindowSize(windowElement, new Vector2(newWidth, newWidth / aspectRatio));
+        setWindowSize(windowElement, widthToWindowSize(window.innerWidth * lastWindowWidthPercentage, WINDOW_MIN_WIDTH, WINDOW_MAX_WIDTH(), ASPECT_RATIO));
       }
       setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
     };
@@ -108,8 +109,8 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
 
     // Setting default resizer values
     let resizeStartMouse = Vector2.ZERO;
+    setWindowSize(windowElement, widthToWindowSize(DEFAULT_WINDOW_WIDTH(), WINDOW_MIN_WIDTH, WINDOW_MAX_WIDTH(), ASPECT_RATIO));
     let windowStartSize = getWindowSize(windowElement);
-    let aspectRatio = windowStartSize.x / windowStartSize.y;
 
     /** Handles resizer start */
     const resizerStart = (e: MouseEvent) => {
@@ -128,8 +129,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       e.preventDefault();
       const delta = new Vector2(e.clientX - resizeStartMouse.x, e.clientY - resizeStartMouse.y);
   
-      const newWidth = getNewWindowWidth(resizer, windowStartSize, delta, WINDOW_MIN_WIDTH, WINDOW_MAX_WIDTH());
-      setWindowSize(windowElement, new Vector2(newWidth, newWidth / aspectRatio));
+      setWindowSize(windowElement, getDeltaWindowSize(resizer, windowStartSize, delta, WINDOW_MIN_WIDTH, WINDOW_MAX_WIDTH(), ASPECT_RATIO));
       lastWindowWidthPercentage = windowElement.offsetWidth / window.innerWidth;
       setWindowPos(windowElement, anchorToVec2(currentAnchor, margin, windowElement));
       //TODO: Tablet window resize support on pinch

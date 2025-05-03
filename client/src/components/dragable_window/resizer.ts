@@ -37,32 +37,46 @@ export const setResizerPos = (element: HTMLDivElement, anchor: string) => {
 // #endregion Position
 
 
-// #region Width
+// #region Size
 /**
- * Returns the new window width based on the resizer position and size
- * @param element - The element being resized
+ * Returns the new window size based on the resizer position and size
+ * @param resizer - The element being resized
  * @param windowStartSize - The starting size of the window
  * @param delta - The change in size based of mouse movement relative to the window
  * @param minWidth - The minimum width of the window
  * @param maxWidth - The maximum width of the window
- * @returns The new window width
+ * @param aspectRatio - The aspect ratio of the window
+ * @returns The new window size as Vector2
  */
-export const getNewWindowWidth = (element: HTMLDivElement, windowStartSize: Vector2, delta: Vector2, minWidth: number, maxWidth: number) => {
-  switch (element.style.cursor) {
+export const getDeltaWindowSize = (resizer: HTMLDivElement, windowStartSize: Vector2, delta: Vector2, minWidth: number, maxWidth: number, aspectRatio: number) => {
+  switch (resizer.style.cursor) {
     case "ne-resize":
     case "se-resize":
     case "e-resize":
-      return Math.max(minWidth, Math.min(maxWidth, windowStartSize.x - delta.x));
+      return new Vector2(Math.max(minWidth, Math.min(maxWidth, windowStartSize.x - delta.x)), Math.max(minWidth, Math.min(maxWidth, windowStartSize.x - delta.x)) / aspectRatio);
     case "nw-resize":
     case "sw-resize":
     case "w-resize":
-      return Math.max(minWidth, Math.min(maxWidth, windowStartSize.x + delta.x));
+      return new Vector2(Math.max(minWidth, Math.min(maxWidth, windowStartSize.x + delta.x)), Math.max(minWidth, Math.min(maxWidth, windowStartSize.x + delta.x)) / aspectRatio);
     case "n-resize":
-      return Math.max(minWidth, Math.min(maxWidth, windowStartSize.x + delta.y));
+      return new Vector2(Math.max(minWidth, Math.min(maxWidth, windowStartSize.x + delta.y)), Math.max(minWidth, Math.min(maxWidth, windowStartSize.x + delta.y)) / aspectRatio);
     case "s-resize":
-      return Math.max(minWidth, Math.min(maxWidth, windowStartSize.x - delta.y));
+      return new Vector2(Math.max(minWidth, Math.min(maxWidth, windowStartSize.x - delta.y)), Math.max(minWidth, Math.min(maxWidth, windowStartSize.x - delta.y)) / aspectRatio);
     default:
-      return windowStartSize.x;
+      return windowStartSize;
   }
+}
+
+
+/**
+ * Returns the window size as Vector2 based on width
+ * @param newWidth - The new width of the window
+ * @param minWidth - The minimum width of the window
+ * @param maxWidth - The maximum width of the window
+ * @param aspectRatio - The aspect ratio of the window
+ * @returns The window size as Vector2
+ */
+export const widthToWindowSize = (newWidth: number, minWidth: number, maxWidth: number, aspectRatio: number) => {
+  return new Vector2(Math.max(minWidth, Math.min(maxWidth, newWidth)), Math.max(minWidth, Math.min(maxWidth, newWidth)) / aspectRatio);
 }
 // #endregion Width
