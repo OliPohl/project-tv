@@ -37,7 +37,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
 
   // #region constants
   const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
-  const MOVE_AVERAGE_COUNT = 5;           // Number of previous moves to average for speed
+  const MOVE_AVERAGE_COUNT = 1;           // Number of previous moves to average for speed
   const SNAP_LERP_FACTOR = 0.022;         // Smoothing factor during snaü
   const ANCHOR_SNAP_SPEED_THRESHOLD = 2;  // Threshold for anchor snap
   // #endregion
@@ -159,7 +159,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // Drag state
     let isDragging = false;
     let lastMouse = Vector2.ZERO;
-    let lastMove: Vector2[] = [];
+    let lastMove = Vector2.ZERO;
     // #endregion Default Values
 
 
@@ -187,7 +187,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       if (isResizing) return;
       e.preventDefault();
       isDragging = true;
-      lastMove = [];
+      lastMove = Vector2.ZERO;
       lastMouse = new Vector2(e.clientX, e.clientY);
       targetPos = anchorToVec2(currentAnchor, margin, windowElement);
       currentPos = targetPos;
@@ -205,12 +205,9 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
      * @param e - Mouse event
      */
     const dragMove = (e: MouseEvent) => {
-      const delta = new Vector2(e.clientX - lastMouse.x, e.clientY - lastMouse.y);
-      lastMove.push(delta);
-      while (lastMove.length > MOVE_AVERAGE_COUNT) lastMove.shift();
-
+      lastMove = new Vector2(e.clientX - lastMouse.x, e.clientY - lastMouse.y);
       lastMouse = new Vector2(e.clientX, e.clientY);
-      targetPos = Vector2.add(targetPos, delta);
+      targetPos = Vector2.add(targetPos, lastMove);
     };
     // #endregion Drag Move
 
@@ -222,16 +219,10 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
       document.removeEventListener("mousemove", dragMove);
       document.removeEventListener("mouseup", dragEnd);
 
-      if (lastMove[lastMove.length -1]){
-        let moveAverage = Vector2.ZERO;
-        for (let i = 0; i < lastMove.length; i++) {
-          moveAverage = Vector2.add(moveAverage, lastMove[i]);
-        }
-        moveAverage = Vector2.multiply(moveAverage, new Vector2(1 / lastMove.length, 1 / lastMove.length));
-        
+      if (lastMove){
         // If the window is moving fast enough, snap to the nearest anchor based on angle.
-        if (moveAverage.magnitude() >  ANCHOR_SNAP_SPEED_THRESHOLD) {
-          targetPos = closestAnchorVec2ByAngle(currentPos, moveAverage.normalize(), anchorsArray, margin, windowElement);
+        if (lastMove.magnitude() >  ANCHOR_SNAP_SPEED_THRESHOLD) {
+          targetPos = closestAnchorVec2ByAngle(currentPos, lastMove.normalize(), anchorsArray, margin, windowElement);
           currentAnchor = vec2ToAnchor(targetPos, margin, windowElement);
           setResizerPos(resizer, currentAnchor);
           requestAnimationFrame(updatePosition);
@@ -262,7 +253,6 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     };
     // #endregion Cleanup
   }, []);
-  //TODO: fix circling cursor feels like random anchor selected
   //TODO: variable speed on distance snap lerp and fix drag end to distance speed value
 
   //TODO: Save positions and size in cookies
