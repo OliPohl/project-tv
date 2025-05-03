@@ -15,15 +15,13 @@ import './style.css'
 import DragableWindow from '../dragable_window';
 // #endregion Imports
 // TODO: show and remove animation
-// TODO: add youtube video or static video on ""
-// TODO: add station controls on hover
+// TODO: add station controls on hover while reserving youtube branding
 
 // #region Miniplayer
 function Miniplayer({ youtubeVideoId }: { youtubeVideoId: string }) {
-  console.log(youtubeVideoId)
   return (
     <DragableWindow className="miniplayer-container" anchors="SW NW NE SE">
-      <iframe id="miniplayer-video" src={"https://www.youtube.com/embed/" + {youtubeVideoId} + "?autoplay=1&controls=0&modestbranding=1&mute=1"} />
+      <iframe id="miniplayer-video" src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=0&modestbranding=1&mute=1`} />
     </DragableWindow>
   )
 }
