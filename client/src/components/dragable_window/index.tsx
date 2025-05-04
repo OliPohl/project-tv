@@ -39,9 +39,7 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
   const windowRef = useRef<HTMLDivElement>(null);
 
   // #region constants
-  const DRAG_LERP_FACTOR = 0.2;           // Smoothing factor during drag
-  const SNAP_LERP_FACTOR = 0.022;         // Smoothing factor during snaü
-  const ANCHOR_SNAP_SPEED_THRESHOLD = 1;  // Threshold for anchor snap
+  const ANCHOR_SNAP_SPEED_THRESHOLD = 1.1;  // Threshold for anchor snap
 
   const WINDOW_MIN_WIDTH = 200;                           // Minimum width of the window
   const WINDOW_MAX_WIDTH = () => window.innerWidth / 2;   // Maximum width of the window
@@ -168,12 +166,19 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     /** Animation loop that smoothly updates window position */
     const updatePosition = () => {
       //TODO: Relpace monkey lerp with actual lerp
-      const lerpFactor = isDragging ? DRAG_LERP_FACTOR : SNAP_LERP_FACTOR;
-      currentPos = Vector2.lerp(currentPos, targetPos, lerpFactor);
+      let direction = Vector2.subtract(targetPos, currentPos).normalize()
+      let distance = Vector2.distance(currentPos, targetPos)
+
+      if (isDragging) {
+        currentPos = Vector2.add(currentPos, Vector2.multiply(direction, new Vector2(distance / 5,distance / 5)))
+      } else {
+        currentPos = Vector2.add(currentPos, Vector2.multiply(direction, new Vector2(Math.min(40, distance / 70),Math.min(40, distance / 70))))
+      }
+      
       setWindowPos(windowElement, currentPos);
 
       // Continue animation if not at target or still dragging
-      if (isDragging || Vector2.distance(currentPos, targetPos) > 1) {
+      if (isDragging || Vector2.distance(currentPos, targetPos) > 11) {
         requestAnimationFrame(updatePosition);
       }
     };
@@ -256,7 +261,9 @@ function DragableWindow({ children, id = '', className = '', anchors, margin = 1
     // #endregion Cleanup
   }, []);
   //TODO: Save positions and size in cookies
-
+  //TODO: update last move when mouse is not moving. currently if the mouse moves and then stops the movement to snap is kept
+  //TODO: Fix while window is anchoring if the browser is getting resized the window will stay on an awkward position
+  //TODO: Clicking the window while anchoring resets the window to the target anchor
   // #region HTML Element
   return (
     <div 
