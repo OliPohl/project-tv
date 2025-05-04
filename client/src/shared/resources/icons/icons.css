@@ -1,0 +1,29 @@
+.icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* Icon-specific masks */
+.icon-close           { -webkit-mask-image: url("./close.svg");           mask-image: url("./close.svg"); }
+.icon-cursor          { -webkit-mask-image: url("./cursor.svg");          mask-image: url("./cursor.svg"); }
+.icon-help            { -webkit-mask-image: url("./help.svg");            mask-image: url("./help.svg"); }
+.icon-lock-locked     { -webkit-mask-image: url("./lock-locked.svg");     mask-image: url("./lock-locked.svg"); }
+.icon-lock-unlocked   { -webkit-mask-image: url("./lock-unlocked.svg");   mask-image: url("./lock-unlocked.svg"); }
+.icon-maximized       { -webkit-mask-image: url("./maximized.svg");       mask-image: url("./maximized.svg"); }
+.icon-minimized       { -webkit-mask-image: url("./minimized.svg");       mask-image: url("./minimized.svg"); }
+.icon-next            { -webkit-mask-image: url("./next.svg");            mask-image: url("./next.svg"); }
+.icon-pause           { -webkit-mask-image: url("./pause.svg");           mask-image: url("./pause.svg"); }
+.icon-play            { -webkit-mask-image: url("./play.svg");            mask-image: url("./play.svg"); }
+.icon-previous        { -webkit-mask-image: url("./previous.svg");        mask-image: url("./previous.svg"); }
+.icon-random          { -webkit-mask-image: url("./random.svg");          mask-image: url("./random.svg"); }
+.icon-search          { -webkit-mask-image: url("./search.svg");          mask-image: url("./search.svg"); }
+.icon-stop            { -webkit-mask-image: url("./stop.svg");            mask-image: url("./stop.svg"); }
+.icon-unmaximize      { -webkit-mask-image: url("./unmaximize.svg");      mask-image: url("./unmaximize.svg"); }

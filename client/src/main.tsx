@@ -13,6 +13,7 @@ import { createRoot } from 'react-dom/client';
 // Styles
 import './shared/styles/general.css';
 import './shared/styles/fonts.css';
+import './shared/resources/icons/icons.css';
 
 // Components
 import Miniplayer from './components/miniplayer';
