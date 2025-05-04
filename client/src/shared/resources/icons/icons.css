@@ -2,6 +2,7 @@
   display: inline-block;
   width: 1em;
   height: 1em;
+  aspect-ratio: 1;
   background-color: currentColor;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
@@ -17,8 +18,8 @@
 .icon-help            { -webkit-mask-image: url("./help.svg");            mask-image: url("./help.svg"); }
 .icon-lock-locked     { -webkit-mask-image: url("./lock-locked.svg");     mask-image: url("./lock-locked.svg"); }
 .icon-lock-unlocked   { -webkit-mask-image: url("./lock-unlocked.svg");   mask-image: url("./lock-unlocked.svg"); }
-.icon-maximized       { -webkit-mask-image: url("./maximized.svg");       mask-image: url("./maximized.svg"); }
-.icon-minimized       { -webkit-mask-image: url("./minimized.svg");       mask-image: url("./minimized.svg"); }
+.icon-maximize       { -webkit-mask-image: url("./maximize.svg");       mask-image: url("./maximize.svg"); }
+.icon-minimize       { -webkit-mask-image: url("./minimize.svg");       mask-image: url("./minimize.svg"); }
 .icon-next            { -webkit-mask-image: url("./next.svg");            mask-image: url("./next.svg"); }
 .icon-pause           { -webkit-mask-image: url("./pause.svg");           mask-image: url("./pause.svg"); }
 .icon-play            { -webkit-mask-image: url("./play.svg");            mask-image: url("./play.svg"); }

@@ -24,12 +24,15 @@ import DragableWindow from '../dragable_window';
 function Miniplayer({ youtubeVideoId }: { youtubeVideoId: string }) {
   return (
     <DragableWindow className="miniplayer-container noselect" anchors="SW NW NE SE" resize={true}>
-      <iframe id="miniplayer-video" src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=0&modestbranding=1&mute=1`} />
+      <iframe id="miniplayer-video" src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1&mute=1`} />
       <div className="miniplayer-controls">
-        <div className="miniplayer-controls-center">
-          <i className="icon icon-previous" />
-          <i className="icon icon-lock-locked" />
-          <i className="icon icon-next" />
+        <div className="miniplayer-controls-area">
+          <div className="miniplayer-controls-center">
+            <i className="icon icon-previous" />
+            <i className="icon icon-lock-locked" />
+            <i className="icon icon-next" />
+          </div>
+          <i className="maximize icon icon-maximize" />
         </div>
       </div>
     </DragableWindow>
