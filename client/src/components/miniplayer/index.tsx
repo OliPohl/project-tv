@@ -13,25 +13,35 @@
 import './style.css'
 import DragableWindow from '../dragable_window';
 
-// import lockedLock from '../../shared/resources/icons/lock-locked.svg?url';
-// import previous from '../../shared/resources/icons/previous.svg';
-// import next from '../../shared/resources/icons/next.svg';
 // #endregion Imports
 // TODO: show and remove animation
-// TODO: add station controls on hover while reserving youtube branding
+// TODO: ^style controls in css and add the station switching functionality
+// TODO: Change miniplayer to be able to get a list of youtube videos and switch between them via buttons (maybe add current station as an output or somthing)
 
 // #region Miniplayer
 function Miniplayer({ youtubeVideoId }: { youtubeVideoId: string }) {
   return (
     <DragableWindow className="miniplayer-container noselect" anchors="SW NW NE SE" resize={true}>
+      {/* Video */}
       <iframe id="miniplayer-video" src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&controls=1&mute=1`} />
+      {/* Controls */}
       <div className="miniplayer-controls">
         <div className="miniplayer-controls-area">
           <div className="miniplayer-controls-center">
-            <i className="icon icon-previous" />
-            <i className="icon icon-lock-locked" />
-            <i className="icon icon-next" />
+            {/* Buttons */}
+            <div className="miniplayer-controls-buttons">
+              <i className="icon icon-previous" />
+              <i className="icon icon-lock-locked" />
+              <i className="icon icon-next" />
+            </div>
+            {/* Heading */}
+            <span className="miniplayer-heading">
+              <span className="miniplayer-country">South Korea</span>
+              <span className="miniplayer-divider">⋄</span>
+              <span className="miniplayer-station-count">1/2</span>
+            </span>
           </div>
+          {/* Maximize Button */}
           <i className="maximize icon icon-maximize" />
         </div>
       </div>

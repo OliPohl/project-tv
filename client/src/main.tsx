@@ -14,6 +14,7 @@ import { createRoot } from 'react-dom/client';
 import './shared/styles/general.css';
 import './shared/styles/fonts.css';
 import './shared/resources/icons/icons.css';
+// TODO: rewrite the css classes and files to fit convention
 
 // Components
 import Miniplayer from './components/miniplayer';
@@ -28,7 +29,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <Miniplayer youtubeVideoId="FJfwehhzIhw" />
+    <Miniplayer youtubeVideoId="" />
   </React.StrictMode>
 );
 // #endregion Main
